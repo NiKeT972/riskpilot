@@ -1,5 +1,7 @@
 # RiskPilot - AI Project Risk Copilot
 
+**Live demo:** https://riskpilot-three.vercel.app
+
 AI-assisted project management: an LLM agent drafts project plans, a Gradient Boosting model predicts
 which tasks will be late, and the app turns that into a critical-path schedule, earned-value cost control,
 explained mitigations, Monte Carlo go-live forecasts and an AI copilot that writes status reports.

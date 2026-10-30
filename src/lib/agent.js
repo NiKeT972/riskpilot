@@ -77,7 +77,8 @@ function detectDomain(text) {
   const t = text.toLowerCase()
   if (/(event|fest|hackathon|conference|summit|wedding|concert|workshop)/.test(t)) return 'event'
   if (/(construct|building|renovat|office fit|civil|bridge|road|warehouse build)/.test(t)) return 'construction'
-  if (/(data|machine learning|\bml\b|\bai\b|analytics|model|dashboard)/.test(t)) return 'data'
+  if (/(\bapp\b|website|portal|platform|software|\berp\b|\bcrm\b|system)/.test(t)) return 'software'
+  if (/(data|machine learning|\bml\b|\bai\b|analytics|predictive model)/.test(t)) return 'data'
   return 'software'
 }
 
@@ -93,9 +94,12 @@ export function localPlan(description) {
   const tpl = TEMPLATES[domain]
   const budget = detectBudget(description) || 2500000
   const units = tpl.reduce((a, r) => a + r[7], 0)
-  const words = description.trim().split(/\s+/).slice(0, 6).join(' ')
+  const head = description.trim().split(/[.,;]| with /i)[0]
+    .replace(/^(we need to |i want to |please )?(build|create|plan|organise|organize|launch|develop|make)\s+/i, '')
+    .replace(/^(a|an|the)\s+/i, '').replace(/\bour\s+/gi, '')
+  const name = head.split(/\s+/).slice(0, 8).join(' ')
   return {
-    name: words.length > 3 ? words.replace(/^(build|create|plan|organise|organize|launch)\s+/i, '').replace(/^\w/, (c) => c.toUpperCase()) : 'New project',
+    name: name.length > 3 ? name.replace(/^\w/, (c) => c.toUpperCase()) : 'New project',
     tasks: tpl.map(([name, phase, owner, duration, deps, complexity, vendor, w], i) => ({
       id: `T${String(i + 1).padStart(2, '0')}`, name, phase, owner, duration,
       deps: deps.map((d) => `T${String(d + 1).padStart(2, '0')}`), complexity,
