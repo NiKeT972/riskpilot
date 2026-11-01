@@ -34,7 +34,7 @@ export function Md({ text }) {
   const lines = String(text || '').split('\n')
   const out = []; let list = []
   const inline = (s, k) => <span key={k} dangerouslySetInnerHTML={{
-    __html: s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/\*\*(.+?)\*\*/g, '<b>$1</b>').replace(/`(.+?)`/g, '<code>$1</code>'),
+    __html: s.replace(/\\\*/g, '*').replace(/\u2217/g, '*').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/\*\*(.+?)\*\*/g, '<b>$1</b>').replace(/(^|[^*\w])\*([^*\n]+?)\*(?=[^*\w]|$)/g, '$1<i>$2</i>').replace(/`(.+?)`/g, '<code>$1</code>'),
   }} />
   const flush = () => { if (list.length) { out.push(<ul key={out.length}>{list.map((l, i) => <li key={i}>{inline(l, i)}</li>)}</ul>); list = [] } }
   lines.forEach((l) => {
