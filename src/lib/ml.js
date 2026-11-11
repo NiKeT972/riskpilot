@@ -66,6 +66,10 @@ export function predictSlip(f) {
   return ratio * Math.max(1, f.planned_days)
 }
 
+// Log-odds. Near 0% or 100% a real improvement barely moves the probability (0.999 -> 0.998), so "is this
+// fix worth showing?" is also judged on the odds scale, which doesn't flatten out.
+const logit = (p) => { const q = Math.min(1 - 1e-12, Math.max(1e-12, p)); return Math.log(q / (1 - q)) }
+
 // Counterfactual explanation (greedy): repeatedly find the actionable factor whose move to a
 // healthy historical level lowers P(delay) the most, apply it, and record the marginal drop.
 export function explain(f, steps = 4) {
@@ -82,7 +86,7 @@ export function explain(f, steps = 4) {
       const p = predictProb({ ...cur, [k]: healthy })
       if (!best || p < best.p) best = { k, p, healthy }
     }
-    if (!best || pCur - best.p < 0.01) break
+    if (!best || (pCur - best.p < 0.01 && logit(pCur) - logit(best.p) < 0.25)) break
     out.push({ feature: best.k, label: FEATURE_LABELS[best.k], value: f[best.k], healthy: best.healthy,
       drop: pCur - best.p, after: best.p, ...MITIGATIONS[best.k] })
     used.add(best.k); cur = { ...cur, [best.k]: best.healthy }; pCur = best.p
