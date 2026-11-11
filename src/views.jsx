@@ -51,7 +51,7 @@ export function Overview({ project, analysis: a, mc, mcMit, setView }) {
         <Card title="Risk by phase" hint="Open tasks by predicted risk level">
           <ResponsiveContainer width="100%" height={240}>
             <BarChart data={byPhase} margin={{ left: -20 }}>
-              <CartesianGrid strokeDasharray="3 3" vertical={false} /><XAxis dataKey="phase" fontSize={11} /><YAxis allowDecimals={false} fontSize={11} /><Tooltip /><Legend wrapperStyle={{ fontSize: 12 }} />
+              <CartesianGrid strokeDasharray="3 3" vertical={false} /><XAxis dataKey="phase" fontSize={11} interval={0} /><YAxis allowDecimals={false} fontSize={11} /><Tooltip /><Legend wrapperStyle={{ fontSize: 12 }} />
               {['High', 'Medium', 'Low', 'Done'].map((k) => <RBar key={k} dataKey={k} stackId="a" fill={COLORS[k]} />)}
             </BarChart>
           </ResponsiveContainer>
@@ -86,7 +86,7 @@ export function PlanView({ project, analysis: a, update, addProject, llm, remove
     const tasks = (plan.tasks || []).map((t) => ({ ...blankTask(t.id), ...t, reqChanges: t.reqChanges ?? 0, progress: 0, actualCost: 0 }))
     const today = new Date().toISOString().slice(0, 10)
     addProject({ id, name: plan.name || 'New project', description: desc, startDate: today, statusDate: today, tasks })
-    setMsg(`Created "${plan.name}" with ${tasks.length} tasks using ${plan.source}. Review the plan below, then update progress as work happens.`)
+    setMsg(`Created "${plan.name}" with ${tasks.length} tasks using ${plan.source}.${plan.warnings?.length ? ` Fixed ${plan.warnings.length} problem(s) in the plan (e.g. ${plan.warnings[0]}).` : ''} Review the plan below, then update progress as work happens.`)
     setBusy(false)
   }
   const onImport = (e) => {

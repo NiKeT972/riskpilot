@@ -4,7 +4,11 @@
 //        "report" -> write a weekly status report for stakeholders
 // Set GROQ_API_KEY (and optionally GROQ_MODEL) in Vercel -> Settings -> Environment Variables.
 
-const MODELS = [process.env.GROQ_MODEL, 'llama-3.3-70b-versatile', 'openai/gpt-oss-120b', 'llama-3.1-8b-instant'].filter(Boolean)
+import { sanitizePlan } from '../src/lib/plan.js'
+
+// Groq retired llama-3.3-70b-versatile on 2026-08-16 (it now returns 404 model_not_found), so it's no longer tried
+// first. GROQ_MODEL overrides the default without a code change.
+const MODELS = [...new Set([process.env.GROQ_MODEL, 'openai/gpt-oss-120b', 'llama-3.1-8b-instant'].filter(Boolean))]
 
 const PLAN_SYSTEM = `You are an expert project manager (PMP). Convert the user's project description into a realistic work breakdown.
 Return ONLY JSON: {"name": string, "tasks": [ {"id": "T01", "name": string, "phase": one of ["Initiation","Planning","Execution","Monitoring","Closure"],
@@ -41,7 +45,7 @@ async function callGroq(messages, json) {
       return { text: data.choices?.[0]?.message?.content ?? '', model }
     }
     lastErr = `${r.status} ${await r.text()}`
-    if (r.status === 401) break
+    if (r.status === 401 || r.status === 429) break   // bad key or rate limit: other models won't help
   }
   throw new Error(lastErr || 'LLM call failed')
 }
@@ -61,7 +65,11 @@ export default async function handler(req, res) {
         { role: 'system', content: PLAN_SYSTEM },
         { role: 'user', content: description },
       ], true)
-      return res.status(200).json({ plan: JSON.parse(text), model })
+      let parsed
+      try { parsed = JSON.parse(text) } catch { return res.status(502).json({ error: 'LLM returned invalid JSON' }) }
+      const plan = sanitizePlan(parsed)            // clamp fields, drop unknown deps, break cycles
+      if (!plan.tasks.length) return res.status(502).json({ error: 'LLM returned an empty plan' })
+      return res.status(200).json({ plan, model })
     }
     const ctx = JSON.stringify(context || {}).slice(0, 14000)
     if (mode === 'report') {
