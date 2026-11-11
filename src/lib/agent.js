@@ -1,6 +1,7 @@
 // Client side of the AI agent: calls /api/agent (Groq LLM) and falls back to a
 // built-in rule-based planner / copilot when no LLM key is configured.
 import { fmtDateY, addDays, inr, mitigationPlan } from './engine'
+import { sanitizePlan } from './plan'
 
 export async function llmStatus() {
   try {
@@ -112,7 +113,11 @@ export function localPlan(description) {
 
 export async function generatePlan(description, useLLM) {
   if (useLLM) {
-    try { const r = await post({ mode: 'plan', description }); return { ...r.plan, source: `LLM (${r.model})` } }
+    try {
+      const r = await post({ mode: 'plan', description })
+      const p = sanitizePlan(r.plan)             // the server already does this; checking again costs nothing
+      if (p.tasks.length) return { ...p, source: `LLM (${r.model})` }
+    }
     catch (e) { console.warn('LLM plan failed, using built-in planner', e) }
   }
   const p = localPlan(description)
